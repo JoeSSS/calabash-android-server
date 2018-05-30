@@ -2,6 +2,7 @@ package sh.calaba.instrumentationbackend.actions.text;
 
 import android.os.Handler;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 
 import java.lang.reflect.InvocationTargetException;
@@ -30,17 +31,19 @@ public abstract class TextAction implements Action {
 
         try {
             servedView = InfoMethodUtil.getServedView();
-
-            // There is a small race condition here, as the input connection may have changed after
-            // we have gotten the servedView.
-            inputConnection = InfoMethodUtil.getInputConnection();
         } catch (InfoMethodUtil.UnexpectedInputMethodManagerStructureException e) {
             e.printStackTrace();
             return Result.failedResult(e.getMessage());
         }
 
-        if (servedView == null || inputConnection == null) {
+        if (servedView == null) {
             return Result.failedResult(getNoFocusedViewMessage());
+        }
+
+        inputConnection = InfoMethodUtil.getInputConnection(servedView);
+
+        if (inputConnection == null) {
+            return Result.failedResult("View does not support input: " + servedView);
         }
 
         FutureTask<Result> futureResult = new FutureTask<Result>(new Callable<Result>() {
