@@ -13,6 +13,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import android.webkit.WebView;
 import sh.calaba.instrumentationbackend.Result;
 import sh.calaba.instrumentationbackend.actions.Action;
 import sh.calaba.instrumentationbackend.query.ast.UIQueryUtils;
@@ -27,7 +28,6 @@ public abstract class TextAction implements Action {
         }
 
         final View servedView;
-        final InputConnection inputConnection;
 
         try {
             servedView = InfoMethodUtil.getServedView();
@@ -40,7 +40,26 @@ public abstract class TextAction implements Action {
             return Result.failedResult(getNoFocusedViewMessage());
         }
 
-        inputConnection = InfoMethodUtil.getInputConnection(servedView);
+        if (servedView instanceof WebView) {
+            return doWebViewInput((WebView) servedView);
+        } else {
+            return doNormalInput(servedView);
+        }
+
+
+    }
+
+    private Result doWebViewInput(WebView servedView) {
+        // FIXME: do JS based webview input, seems to be what espresso is also doing.
+        // See fx. 'git clone https://android.googlesource.com/platform/frameworks/testing'
+        // and checkout 'android-support-test' branch.
+        // Notes: https://developer.android.com/training/testing/espresso/web
+        // Code example: https://android.googlesource.com/platform/frameworks/testing/+/android-support-test/espresso/sample/src/androidTest/java/android/support/test/testapp/WebViewTest.java#100
+        return Result.failedResult("WebView input is currently not supported. Found: " + servedView);
+    }
+
+    private Result doNormalInput(View servedView) {
+        InputConnection inputConnection = InfoMethodUtil.getInputConnection(servedView);
 
         if (inputConnection == null) {
             return Result.failedResult("View does not support input: " + servedView);
